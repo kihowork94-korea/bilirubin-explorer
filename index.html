@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<title>Bilirubin Screen Tradeoffs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+
+<style>
+:root{
+  --ground:#FBFAF7; --card:#FFFFFF; --ink:#22282B; --muted:#6B7570; --hair:#E4E1D8;
+  --accent:#0E7C86; --accent-soft:#0E7C8618; --on-accent:#FFFFFF;
+  --safe:#2E7D53; --refer:#B7791F; --miss:#C1443A;
+  --shadow:0 1px 2px rgba(20,26,30,.04),0 6px 20px rgba(20,26,30,.06);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#12181B; --card:#1A2226; --ink:#E7EBE9; --muted:#93A09B; --hair:#2A3439;
+  --accent:#3FB6BF; --accent-soft:#3FB6BF1F; --on-accent:#0B1113;
+  --safe:#5FC58C; --refer:#E0A64A; --miss:#E5695E;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --ground:#12181B; --card:#1A2226; --ink:#E7EBE9; --muted:#93A09B; --hair:#2A3439;
+  --accent:#3FB6BF; --accent-soft:#3FB6BF1F; --on-accent:#0B1113;
+  --safe:#5FC58C; --refer:#E0A64A; --miss:#E5695E;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans","Noto Sans KR",system-ui,-apple-system,sans-serif;
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:47rem;margin:0 auto;padding:2.6rem 1.15rem 4rem}
+h1,h2{font-family:"Fraunces","Noto Sans KR",Georgia,serif;font-weight:600;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:1.95rem;line-height:1.18;margin:.2rem 0 .5rem}
+.lede{color:var(--muted);font-size:1.02rem;margin:0 0 .4rem;max-width:38rem}
+.prov{color:var(--muted);font-size:.82rem;margin:.9rem 0 0}
+.eyebrow{font-size:.72rem;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin:0 0 .5rem}
+
+.langbar{display:flex;gap:.35rem;justify-content:flex-end;margin-bottom:.2rem}
+.langbar button{
+  font:inherit;font-size:.78rem;font-weight:600;padding:.3rem .62rem;border-radius:7px;cursor:pointer;
+  border:1px solid var(--hair);background:transparent;color:var(--muted);transition:.14s;
+}
+.langbar button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.langbar button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.card{
+  background:var(--card);border:1px solid var(--hair);border-radius:14px;
+  padding:1.5rem 1.35rem 1.55rem;margin-top:1.5rem;box-shadow:var(--shadow);
+}
+.card h2{font-size:1.24rem;margin:0 0 .3rem}
+.q{color:var(--muted);font-size:.95rem;margin:0 0 1.15rem}
+
+.controls{display:flex;flex-direction:column;gap:1.15rem;margin-bottom:1.25rem}
+.ctl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.9rem;font-weight:500;margin-bottom:.4rem}
+.ctl label b{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.95rem;color:var(--accent)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:3px;background:var(--hair);outline:none;margin:.35rem 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);border:3px solid var(--card);box-shadow:0 0 0 1px var(--accent);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);border:3px solid var(--card);box-shadow:0 0 0 1px var(--accent);cursor:pointer}
+input[type=range]:focus-visible{box-shadow:0 0 0 3px var(--accent-soft)}
+.seg{display:flex;gap:.4rem;flex-wrap:wrap}
+.seg button{
+  font:inherit;font-size:.85rem;padding:.42rem .7rem;border-radius:8px;cursor:pointer;
+  border:1px solid var(--hair);background:transparent;color:var(--muted);transition:.14s;
+}
+.seg button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.readout{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:.25rem 0 1rem}
+.stat{border:1px solid var(--hair);border-radius:10px;padding:.7rem .75rem;background:var(--ground)}
+.stat .k{font-size:.72rem;color:var(--muted);letter-spacing:.03em;margin-bottom:.2rem}
+.stat .v{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:1.5rem;line-height:1;font-variant-numeric:tabular-nums}
+.stat.saved .v{color:var(--safe)} .stat.refer .v{color:var(--refer)} .stat.miss .v{color:var(--miss)}
+.stat .u{font-size:.72rem;color:var(--muted);margin-left:.15rem}
+
+canvas{width:100%;height:auto;display:block;border-radius:8px}
+.means{font-size:.9rem;color:var(--ink);border-top:1px solid var(--hair);padding-top:.9rem;margin-top:.35rem}
+.means b{color:var(--accent);font-weight:600}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
+.rbig{font-family:"IBM Plex Mono",monospace;font-weight:600;font-variant-numeric:tabular-nums}
+
+.foot{margin-top:2.2rem;padding-top:1.1rem;border-top:1px solid var(--hair);color:var(--muted);font-size:.8rem;line-height:1.55}
+.foot p{margin:.4rem 0}
+@media (max-width:430px){
+  .wrap{padding-top:2rem}
+  h1{font-size:1.6rem}
+  .readout{grid-template-columns:1fr}
+  .stat{display:flex;align-items:baseline;justify-content:space-between}
+  .stat .k{margin:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="langbar" role="group" aria-label="Language / 언어">
+    <button type="button" data-lang="en" aria-pressed="true">EN</button>
+    <button type="button" data-lang="ko" aria-pressed="false">한국어</button>
+  </div>
+
+  <p class="eyebrow" data-k="eyebrow">Poster companion · Korean BioChip Society 2026</p>
+  <h1 data-k="h1">Design tradeoffs for a low-cost optical neonatal bilirubin screen</h1>
+  <p class="lede" data-k="lede">A hands-on tool for results from open data (NeoJaundice — 745 neonates, forehead photos + measured serum bilirubin). The accuracy ceiling comes from <b>how you capture the image and what you measure with — not the model architecture</b>: skin-only colour features reach AUC 0.82, and no CNN or transfer network beats it.</p>
+  <p class="prov" data-k="prov">Patient-independent 5-fold cross-validation · skin-only colour features AUC 0.82 / +clinical 0.84 · label-shuffle negative control 0.48. Including the in-frame <b>colour reference card</b> in the crop raises AUC to 0.88 — acquisition control is worth +0.05. NeoJaundice is a <b>jaundice-evaluation cohort</b>, not consecutive births.</p>
+
+  <!-- ===== MODULE 1 ===== -->
+  <section class="card" id="m1">
+    <p class="eyebrow" data-k="m1_eyebrow">Screen &rarr; confirm policy</p>
+    <h2 data-k="m1_h2">How much blood-draw can optical screening save?</h2>
+    <p class="q" data-k="m1_q">Infants whose optical prediction is at or above the threshold are sent for blood confirmation. Move the threshold and the population risk prevalence. (Skin-only crop model, colour features + clinical, patient-independent OOF, AUC 0.84.)</p>
+
+    <div class="controls">
+      <div class="ctl">
+        <label for="tau"><span data-k="m1_tau">Blood-draw referral threshold (predicted bilirubin, mg/dL)</span> <b id="tauV">8.7</b></label>
+        <input type="range" id="tau" min="6" max="20" step="0.1" value="8.7">
+      </div>
+      <div class="ctl">
+        <label for="prev"><span data-k="m1_prev">Population risk (TSB &ge; 15) prevalence</span> <b id="prevV">7%</b></label>
+        <input type="range" id="prev" min="3" max="28" step="1" value="7">
+        <span style="font-size:.78rem;color:var(--muted)" data-k="m1_prevhint">General neonates 5&ndash;10% · the NeoJaundice sample is 28% (jaundice-enriched)</span>
+      </div>
+    </div>
+
+    <div class="readout">
+      <div class="stat"><div class="k" data-k="m1_sens">High-risk infants caught (sensitivity)</div><div class="v" id="o_sens">&ndash;</div></div>
+      <div class="stat saved"><div class="k" data-k="m1_saved">Blood-draws saved (vs universal)</div><div class="v" id="o_saved">&ndash;</div></div>
+      <div class="stat miss"><div class="k" data-k="m1_miss">Missed high-risk infants</div><div class="v"><span id="o_miss">&ndash;</span><span class="u" data-k="m1_missU">/ 1000</span></div></div>
+    </div>
+
+    <canvas id="curve" width="640" height="300" aria-label="Sensitivity vs blood-draws-saved curve"></canvas>
+    <p class="means" id="m1means"></p>
+  </section>
+
+  <!-- ===== MODULE 2 ===== -->
+  <section class="card" id="m2">
+    <p class="eyebrow" data-k="m2_eyebrow">Sensor spec</p>
+    <h2 data-k="m2_h2">How far can you simplify the sensor?</h2>
+    <p class="q" data-k="m2_q">Patient-independent AUC for the risk class (TSB &ge; 15), skin-only 24% crop, each grade fused with clinical variables. Cheaper sensor &rarr; fewer bands, left to right.</p>
+
+    <div class="controls">
+      <div class="ctl">
+        <label data-k="m2_grade">Sensor grade (skin-only crop, + clinical)</label>
+        <div class="seg" id="grade">
+          <button data-v="SG0" data-k="m2_g_SG0">Clinical only</button>
+          <button data-v="SG1" data-k="m2_g_SG1">1 band</button>
+          <button data-v="SG2" data-k="m2_g_SG2">RGB 3-ch</button>
+          <button data-v="SG3" data-k="m2_g_SG3" aria-pressed="true">Colour features</button>
+          <button data-v="SG4" data-k="m2_g_SG4">+ colour card</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="readout" style="grid-template-columns:1fr">
+      <div class="stat"><div class="k" data-k="m2_auc">AUC &mdash; risk TSB &ge; 15 (skin-only crop, + clinical)</div><div class="v" id="o_auc">&ndash;</div></div>
+    </div>
+    <p class="means" id="m2means"></p>
+    <p class="means" data-k="m2_norm_note" style="border-top:none;padding-top:.2rem;font-size:.82rem;color:var(--muted)">Normalization &gt; band count: in a separate legacy experiment (card-mixed crop) robust <i>shades-of-gray</i> normalization let 1&ndash;3 band tiers hold up, while basic <i>gray-world</i> could hurt. A physical illumination-reference channel is still hypothetical.</p>
+  </section>
+
+  <!-- ===== MODULE 3 ===== -->
+  <section class="card" id="m3">
+    <p class="eyebrow" data-k="m3_eyebrow">Skin tone (in silico)</p>
+    <h2 data-k="m3_h2">Dark-skin bias and reference-wavelength correction</h2>
+    <p class="q" data-k="m3_q">Photos are virtually darkened per the optical model (a synthetic Fitzpatrick ladder) to show prediction bias. This is synthetic dark skin, so treat it as a direction indicator.</p>
+
+    <div class="controls">
+      <div class="ctl">
+        <label for="mel"><span data-k="m3_mel">Simulated melanin level</span> <b id="melV">1.0</b></label>
+        <input type="range" id="mel" min="0" max="2.5" step="0.5" value="1">
+      </div>
+      <div class="ctl">
+        <label data-k="m3_corr">Bilirubin-free reference-channel correction</label>
+        <div class="seg" id="corr">
+          <button data-v="off" data-k="m3_c_off" aria-pressed="true">Off</button>
+          <button data-v="on" data-k="m3_c_on">On</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="readout" style="grid-template-columns:1fr 1fr">
+      <div class="stat"><div class="k" data-k="m3_bias">Prediction bias (predicted &minus; actual)</div><div class="v"><span id="o_bias">&ndash;</span><span class="u" data-k="m3_biasU">mg/dL</span></div></div>
+      <div class="stat refer"><div class="k" data-k="m3_rr">Blood-draw referral rate</div><div class="v" id="o_rr">&ndash;</div></div>
+    </div>
+    <p class="means" id="m3means"></p>
+  </section>
+
+  <div class="foot">
+    <p data-k="foot1"><b style="color:var(--ink)">This is a research demo.</b> It is not a tool for estimating bilirubin from real infant photos. The 95% limits of agreement for individual predictions are &plusmn;5.4 mg/dL, and optical screening is a screening layer that feeds blood confirmation, not a standalone diagnosis. The Bland&ndash;Altman mean bias is zero, but a <b>proportional bias</b> under-estimates infants above bilirubin 15 by 2&ndash;5 mg/dL.</p>
+    <p data-k="foot2">Limitations: the photo frame contains a <b>colour reference card</b> partly included by the older crop &rarr; the skin-only crop drops AUC 0.88&rarr;0.82 (a tight crop also reduces skin area, so part of the drop may be an area effect) · policy % and curves are based on the card-included model (0.878) and a skin-only recompute (0.838) is pending · single cohort · <b>NeoJaundice is a jaundice-evaluation cohort</b> (not consecutive births) · few-band and melanin results are RGB approximations · fixed-threshold simplification · label-shuffle negative control AUC 0.48 (no leakage). Data: NeoJaundice (CC0), patient-independent 5-fold.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(s){return document.querySelector(s)};
+
+  /* ================= i18n dictionary ================= */
+  var I18N={
+    en:{
+      eyebrow:"Poster companion · Korean BioChip Society 2026",
+      h1:"Design tradeoffs for a low-cost optical neonatal bilirubin screen",
+      lede:'A hands-on tool for results from open data (NeoJaundice — 745 neonates, forehead photos + measured serum bilirubin). The accuracy ceiling comes from <b>how you capture the image and what you measure with — not the model architecture</b>: skin-only colour features reach AUC 0.82, and no CNN or transfer network beats it.',
+      prov:'Patient-independent 5-fold cross-validation · skin-only colour features AUC 0.82 / +clinical 0.84 · label-shuffle negative control 0.48. Including the in-frame <b>colour reference card</b> in the crop raises AUC to 0.88 — acquisition control is worth +0.05. NeoJaundice is a <b>jaundice-evaluation cohort</b>, not consecutive births.',
+
+      m1_eyebrow:"Screen → confirm policy",
+      m1_h2:"How much blood-draw can optical screening save?",
+      m1_q:"Infants whose optical prediction is at or above the threshold are sent for blood confirmation. Move the threshold and the population risk prevalence. (Skin-only crop model, colour features + clinical, patient-independent OOF, AUC 0.84.)",
+      m1_tau:"Blood-draw referral threshold (predicted bilirubin, mg/dL)",
+      m1_prev:"Population risk (TSB ≥ 15) prevalence",
+      m1_prevhint:"General neonates 5–10% · the NeoJaundice sample is 28% (jaundice-enriched)",
+      m1_sens:"High-risk infants caught (sensitivity)",
+      m1_saved:"Blood-draws saved (vs universal)",
+      m1_miss:"Missed high-risk infants",
+      m1_missU:"/ 1000",
+      ax_saved:"blood-draws saved →",
+      ax_sens:"sensitivity →",
+      canvasA:"Sensitivity vs blood-draws-saved curve",
+      m1_zero:function(s){return "Catches <b>every</b> high-risk infant while cutting confirmatory blood-draws by "+s+".";},
+      m1_95:function(miss,s){return "Misses "+miss+" high-risk infants per 1000, in exchange for a "+s+" cut in blood-draws.";},
+      m1_bad:function(p){return "This threshold misses "+p+" of high-risk infants — not a usable screening operating point.";},
+
+      m2_eyebrow:"Sensor spec",
+      m2_h2:"How far can you simplify the sensor?",
+      m2_q:"Patient-independent AUC for the risk class (TSB ≥ 15), skin-only 24% crop, each grade fused with clinical variables. Cheaper sensor → fewer bands, left to right.",
+      m2_grade:"Sensor grade (skin-only crop, + clinical)",
+      m2_g_SG0:"Clinical only",
+      m2_g_SG1:"1 band",
+      m2_g_SG2:"RGB 3-ch",
+      m2_g_SG3:"Colour features",
+      m2_g_SG4:"+ colour card",
+      m2_auc:"AUC — risk TSB ≥ 15 (skin-only crop, + clinical)",
+      m2_norm_note:"Normalization > band count: in a separate legacy experiment (card-mixed crop) robust <i>shades-of-gray</i> normalization let 1–3 band tiers hold up, while basic <i>gray-world</i> could hurt. A physical illumination-reference channel is still hypothetical.",
+      m2_SG0:"Clinical variables alone reach AUC 0.72 — real, but not enough. The optical signal is what lifts it past there.",
+      m2_SG1:"A single band + clinical reaches AUC 0.76. A minimal 1-band sensor is workable as a screen, though it likely cannot reach zero-miss.",
+      m2_SG2:"RGB 3-channel + clinical reaches AUC 0.81 — an ordinary phone camera, no special optics.",
+      m2_SG3:"Hand-built colour features + clinical reach AUC 0.84. This is the working point; no CNN or transfer network beats it.",
+      m2_SG4:"Including the in-frame colour reference card in the crop reaches AUC 0.88 — the +0.05 is acquisition control (a built-in reference), not a better model.",
+
+      m3_eyebrow:"Skin tone (in silico)",
+      m3_h2:"Dark-skin bias and reference-wavelength correction",
+      m3_q:"Photos are virtually darkened per the optical model (a synthetic Fitzpatrick ladder) to show prediction bias. This is synthetic dark skin, so treat it as a direction indicator.",
+      m3_mel:"Simulated melanin level",
+      m3_corr:"Bilirubin-free reference-channel correction",
+      m3_c_off:"Off",
+      m3_c_on:"On",
+      m3_bias:"Prediction bias (predicted − actual)",
+      m3_biasU:"mg/dL",
+      m3_rr:"Blood-draw referral rate",
+      m3_zero:"With no pigment the bias is near zero. (Turning correction on costs a little accuracy on pigment-free infants.)",
+      m3_off:function(b,rr){return "<b>In simulation</b>, as virtual melanin darkens, bilirubin is <b>over-estimated by "+b+" mg/dL</b> and the referral rate climbs to "+rr+"%, wiping out the blood-draw saving. (The α·melanin scale is arbitrary — direction only.)";},
+      m3_on:function(bs,rr){return "After red reference-channel correction: bias <b>"+bs+" mg/dL</b>, referral rate "+rr+"% — bias sharply reduced (simulation).";},
+
+      foot1:'<b style="color:var(--ink)">This is a research demo.</b> It is not a tool for estimating bilirubin from real infant photos. The 95% limits of agreement for individual predictions are ±5.4 mg/dL, and optical screening is a screening layer that feeds blood confirmation, not a standalone diagnosis. The Bland–Altman mean bias is zero, but a <b>proportional bias</b> under-estimates infants above bilirubin 15 by 2–5 mg/dL.',
+      foot2:'Limitations: the photo frame contains a <b>colour reference card</b> partly included by the older crop → the skin-only crop drops AUC 0.88→0.82 (a tight crop also reduces skin area, so part of the drop may be an area effect) · policy % and curves use the <b>skin-only model (AUC 0.84)</b> at 7% screening prevalence · single cohort · <b>NeoJaundice is a jaundice-evaluation cohort</b> (not consecutive births) · few-band and melanin results are RGB approximations · fixed-threshold simplification · label-shuffle negative control AUC 0.48 (no leakage). Data: NeoJaundice (CC0), patient-independent 5-fold.'
+    },
+    ko:{
+      eyebrow:"Poster companion · 한국바이오칩학회 2026",
+      h1:"저가 광학 신생아 빌리루빈 선별의 설계 절충점",
+      lede:'공개 데이터(NeoJaundice, 신생아 745명, 이마 사진 + 실제 혈중 빌리루빈)로 분석한 결과를 직접 만져보는 도구입니다. 정확도의 한계는 <b>모델 구조가 아니라 어떻게 찍고 무엇으로 재느냐</b>에서 옵니다 — 피부만 크롭한 색특징으로 AUC 0.82, 어떤 CNN·전이망도 못 넘었습니다.',
+      prov:'환자 독립 5-fold 교차검증 · 피부만 크롭 색특징 AUC 0.82 / +임상 0.84 · 라벨 셔플 음성대조 0.48. 사진 프레임에 있는 <b>색 참조 카드</b>를 크롭에 포함하면 AUC 0.88 — 취득 통제가 +0.05. NeoJaundice는 연속 출생이 아닌 <b>황달 평가 코호트</b>입니다.',
+
+      m1_eyebrow:"선별 → 확진 정책",
+      m1_h2:"광학 선별로 채혈을 얼마나 줄일 수 있나",
+      m1_q:"광학 예측값이 임계 이상이면 혈액 확진으로 보냅니다. 임계와 신생아 인구 위험 유병률을 바꿔 보세요. (피부만 크롭 모델, 색특징+임상, 환자 독립 OOF, AUC 0.84.)",
+      m1_tau:"채혈 의뢰 임계 (예측 빌리루빈, mg/dL)",
+      m1_prev:"신생아 인구 위험(TSB≥15) 유병률",
+      m1_prevhint:"일반 신생아 5–10% · NeoJaundice 표본은 28%(황달 강화)",
+      m1_sens:"위험 아기 포착 (민감도)",
+      m1_saved:"채혈 절감 (전수 대비)",
+      m1_miss:"놓친 위험 아기",
+      m1_missU:"/ 1000",
+      ax_saved:"채혈 절감 →",
+      ax_sens:"민감도 →",
+      canvasA:"민감도 대 채혈 절감 곡선",
+      m1_zero:function(s){return "위험 아기를 <b>한 명도 놓치지 않으면서</b> 확진 채혈을 "+s+" 줄입니다.";},
+      m1_95:function(miss,s){return "1000명당 위험 아기 "+miss+"명을 놓치는 대신 채혈을 "+s+" 절감합니다.";},
+      m1_bad:function(p){return "이 임계는 위험 아기의 "+p+"를 놓칩니다 — 스크리닝 운용점으로는 부적합.";},
+
+      m2_eyebrow:"센서 사양",
+      m2_h2:"센서를 어디까지 단순화할 수 있나",
+      m2_q:"위험군(TSB ≥ 15)에 대한 환자 독립 AUC, 피부만 24% 크롭, 각 등급을 임상변수와 융합. 왼쪽→오른쪽으로 갈수록 밴드가 적은 저가 센서.",
+      m2_grade:"센서 등급 (피부만 크롭, + 임상)",
+      m2_g_SG0:"임상만",
+      m2_g_SG1:"1밴드",
+      m2_g_SG2:"RGB 3채널",
+      m2_g_SG3:"색특징",
+      m2_g_SG4:"+ 색 카드",
+      m2_auc:"AUC — 위험 TSB ≥ 15 (피부만 크롭, + 임상)",
+      m2_norm_note:"밴드 수보다 정규화: 별개의 구버전 실험(색 카드 혼입 크롭)에서 강건 <i>shades-of-gray</i> 정규화는 1~3밴드 등급을 지탱했고, 기본 <i>gray-world</i>는 오히려 악화시켰습니다. 물리적 조명 참조 채널은 아직 가설입니다.",
+      m2_SG0:"임상변수만으로 AUC 0.72 — 실재하지만 부족. 그 위로 끌어올리는 건 광학 신호입니다.",
+      m2_SG1:"1밴드 + 임상이면 AUC 0.76. 최소 1밴드 센서도 선별용으로는 쓸 만하지만 무손실은 어렵습니다.",
+      m2_SG2:"RGB 3채널 + 임상이면 AUC 0.81 — 특수 광학 없는 일반 폰 카메라.",
+      m2_SG3:"손수 만든 색특징 + 임상이면 AUC 0.84. 이게 작동점이고, 어떤 CNN·전이망도 못 넘습니다.",
+      m2_SG4:"프레임 내 색 참조 카드를 크롭에 포함하면 AUC 0.88 — 이 +0.05는 더 나은 모델이 아니라 취득 통제(내장 참조)입니다.",
+
+      m3_eyebrow:"피부색 (인실리코)",
+      m3_h2:"짙은 피부의 편향과 참조 파장 보정",
+      m3_q:"광학 모델대로 사진을 가상으로 어둡게 만들어(가상 Fitzpatrick 사다리) 예측 편향을 봅니다. 합성 짙은 피부이므로 방향 지표입니다.",
+      m3_mel:"가상 멜라닌 수준",
+      m3_corr:"빌리루빈 비흡수 파장 참조채널 보정",
+      m3_c_off:"끔",
+      m3_c_on:"켬",
+      m3_bias:"예측 편향 (예측 − 실제)",
+      m3_biasU:"mg/dL",
+      m3_rr:"채혈 의뢰율",
+      m3_zero:"색소가 없으면 편향은 거의 0. (보정을 켜면 색소 없는 아기에서 정확도가 약간 떨어지는 대가가 있습니다.)",
+      m3_off:function(b,rr){return "<b>시뮬레이션상</b> 가상 멜라닌이 짙어질수록 빌리루빈을 <b>"+b+" mg/dL 과대추정</b>하고, 의뢰율이 "+rr+"%로 치솟아 채혈 절감이 사라집니다. (α·멜라닌 스케일은 임의 — 방향만 신뢰.)";},
+      m3_on:function(bs,rr){return "적색 참조 채널 보정 후 편향 <b>"+bs+" mg/dL</b>, 의뢰율 "+rr+"% — 편향 대폭 축소(시뮬레이션).";},
+
+      foot1:'<b style="color:var(--ink)">이건 연구용 시연입니다.</b> 실제 아기 사진으로 빌리루빈을 추정하는 도구가 아닙니다. 개별 예측의 95% 일치 한계는 ±5.4 mg/dL이며, 광학 선별은 단독 진단이 아니라 혈액 확진으로 연계되는 선별 층입니다. Bland–Altman 평균 편향은 0이지만 <b>비례 편향</b>이 있어 빌리루빈 15 초과 아기를 2–5 mg/dL 과소추정합니다.',
+      foot2:'한계: <b>사진 프레임에 색 참조 카드가 있어</b> 예전 크롭이 일부 포함 → 피부만 크롭 시 AUC 0.88→0.82 (타이트 크롭은 피부 면적도 줄여 하락 일부는 면적 효과일 수 있음) · 정책 %·곡선은 <b>피부만 모델(AUC 0.84)</b>, 스크리닝 유병률 7% 기준 · 단일 코호트 · <b>NeoJaundice는 황달 평가 코호트</b>(연속 출생 아님) · 소수 밴드·멜라닌은 RGB 근사 시뮬 · 고정 임계 단순화 · 라벨 셔플 음성대조 AUC 0.48(누설 없음). 데이터: NeoJaundice (CC0), 환자 독립 5-fold.'
+    }
+  };
+
+  var LANG="en";
+  try{ var sv=localStorage.getItem("bx_lang"); if(sv==="ko"||sv==="en") LANG=sv; }catch(e){}
+
+  /* ---------- MODULE 1 : policy ---------- */
+  /* [tau, sensitivity, 1-specificity] — skin-only 24% crop model (colour features
+     + clinical), patient-independent OOF, n=745, risk TSB>=15. OOF AUC 0.838. */
+  var POL=[[6.0,1.0,0.784],[6.1,1.0,0.7784],[6.2,1.0,0.7747],[6.3,1.0,0.7709],[6.4,1.0,0.7654],[6.5,1.0,0.7598],[6.6,1.0,0.7542],[6.7,1.0,0.7523],[6.8,1.0,0.7393],[6.9,1.0,0.7356],[7.0,1.0,0.73],[7.1,1.0,0.7263],[7.2,1.0,0.7225],[7.3,1.0,0.7132],[7.4,1.0,0.7076],[7.5,1.0,0.6983],[7.6,1.0,0.6946],[7.7,1.0,0.6872],[7.8,1.0,0.6816],[7.9,1.0,0.6704],[8.0,1.0,0.6629],[8.1,1.0,0.6536],[8.2,1.0,0.6499],[8.3,1.0,0.648],[8.4,1.0,0.6387],[8.5,1.0,0.635],[8.6,1.0,0.6331],[8.7,1.0,0.6257],[8.8,0.9952,0.6238],[8.9,0.9952,0.6145],[9.0,0.9952,0.6127],[9.1,0.9904,0.6108],[9.2,0.9904,0.6052],[9.3,0.9904,0.5978],[9.4,0.9904,0.594],[9.5,0.9904,0.581],[9.6,0.9904,0.568],[9.7,0.9808,0.5624],[9.8,0.9808,0.5531],[9.9,0.9808,0.5475],[10.0,0.9808,0.5438],[10.1,0.9712,0.5382],[10.2,0.9712,0.5326],[10.3,0.9712,0.5289],[10.4,0.9712,0.5214],[10.5,0.9663,0.5102],[10.6,0.9663,0.5065],[10.7,0.9615,0.4991],[10.8,0.9615,0.4879],[10.9,0.9567,0.4823],[11.0,0.9423,0.4749],[11.1,0.9375,0.4618],[11.2,0.9327,0.4525],[11.3,0.9279,0.4432],[11.4,0.9279,0.4339],[11.5,0.9183,0.4283],[11.6,0.9135,0.4209],[11.7,0.9087,0.4115],[11.8,0.9038,0.4004],[11.9,0.9038,0.3892],[12.0,0.899,0.378],[12.1,0.8846,0.3687],[12.2,0.8702,0.3631],[12.3,0.8654,0.3538],[12.4,0.8558,0.3464],[12.5,0.851,0.3352],[12.6,0.8462,0.3184],[12.7,0.8413,0.2998],[12.8,0.8221,0.2905],[12.9,0.8125,0.2831],[13.0,0.7837,0.2756],[13.1,0.7788,0.2644],[13.2,0.75,0.2551],[13.3,0.7356,0.2439],[13.4,0.7308,0.2346],[13.5,0.7019,0.2291],[13.6,0.6923,0.2216],[13.7,0.6827,0.2142],[13.8,0.6683,0.2011],[13.9,0.6587,0.1955],[14.0,0.625,0.1881],[14.1,0.6154,0.1806],[14.2,0.5962,0.175],[14.3,0.5865,0.1583],[14.4,0.5769,0.1508],[14.5,0.5529,0.1471],[14.6,0.5288,0.1322],[14.7,0.5192,0.1192],[14.8,0.5192,0.1155],[14.9,0.4952,0.1099],[15.0,0.4712,0.1043],[15.1,0.4519,0.1006],[15.2,0.4327,0.0931],[15.3,0.4087,0.0838],[15.4,0.375,0.0708],[15.5,0.3413,0.0615],[15.6,0.3125,0.054],[15.7,0.2981,0.0503],[15.8,0.2933,0.041],[15.9,0.2692,0.0354],[16.0,0.2596,0.0279],[16.1,0.2404,0.0261],[16.2,0.2308,0.0261],[16.3,0.1971,0.0242],[16.4,0.1827,0.0223],[16.5,0.1779,0.0205],[16.6,0.1683,0.0205],[16.7,0.1635,0.0149],[16.8,0.149,0.013],[16.9,0.1442,0.013],[17.0,0.125,0.013],[17.1,0.1106,0.013],[17.2,0.0962,0.0112],[17.3,0.0913,0.0112],[17.4,0.0817,0.0112],[17.5,0.0769,0.0112],[17.6,0.0721,0.0093],[17.7,0.0721,0.0074],[17.8,0.0721,0.0074],[17.9,0.0577,0.0074],[18.0,0.0481,0.0056],[18.1,0.0385,0.0056],[18.2,0.024,0.0056],[18.3,0.024,0.0056],[18.4,0.024,0.0056],[18.5,0.0144,0.0019],[18.6,0.0144,0.0019],[18.7,0.0144,0.0019],[18.8,0.0048,0.0],[18.9,0.0,0.0],[19.0,0.0,0.0],[20.0,0.0,0.0]];
+
+  function rowFor(tau){ var best=POL[0],bd=1e9; for(var i=0;i<POL.length;i++){var d=Math.abs(POL[i][0]-tau); if(d<bd){bd=d;best=POL[i];}} return best; }
+  function savedAt(sens,oms,pi){ var refer=pi*sens+(1-pi)*oms; return 1-refer; }
+  function fmtPct(x){ return (x*100).toFixed(x*100>=99.95?0:(x*100<10?1:0))+"%"; }
+
+  var cv=$("#curve"), ctx=cv.getContext("2d");
+  function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  function drawCurve(pi,curTau){
+    var D=I18N[LANG];
+    var dpr=window.devicePixelRatio||1, W=cv.clientWidth||620, H=300, pad=40;
+    cv.style.height=H+"px";
+    if(cv.width!==Math.round(W*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+    var x0=pad,x1=W-14,y0=H-30,y1=14;
+    var X=function(s){return x0+s*(x1-x0)}, Y=function(v){return y0+(v)*(y1-y0)};
+    ctx.strokeStyle=css("--hair"); ctx.fillStyle=css("--muted"); ctx.lineWidth=1;
+    ctx.font='11px "IBM Plex Mono",monospace'; ctx.textAlign="center";
+    for(var g=0;g<=100;g+=25){ var xx=X(g/100); ctx.globalAlpha=.6;ctx.beginPath();ctx.moveTo(xx,y1);ctx.lineTo(xx,y0);ctx.stroke();ctx.globalAlpha=1; ctx.fillText(g+"%",xx,y0+16); }
+    ctx.textAlign="right";
+    for(var s=0;s<=100;s+=25){ var yy=Y(s/100); ctx.globalAlpha=.6;ctx.beginPath();ctx.moveTo(x0,yy);ctx.lineTo(x1,yy);ctx.stroke();ctx.globalAlpha=1; ctx.fillText(s+"%",x0-6,yy+3); }
+    ctx.textAlign="center"; ctx.fillText(D.ax_saved,(x0+x1)/2,H-4);
+    ctx.save();ctx.translate(11,(y0+y1)/2);ctx.rotate(-Math.PI/2);ctx.fillText(D.ax_sens,0,0);ctx.restore();
+    ctx.strokeStyle=css("--accent"); ctx.lineWidth=2.4; ctx.beginPath();
+    var started=false;
+    for(var i=0;i<POL.length;i++){ var sv=savedAt(POL[i][1],POL[i][2],pi); var px=X(sv),py=Y(POL[i][1]);
+      if(!started){ctx.moveTo(px,py);started=true;} else ctx.lineTo(px,py); }
+    ctx.stroke();
+    var r=rowFor(curTau), csv=savedAt(r[1],r[2],pi);
+    ctx.fillStyle=css("--accent");
+    ctx.beginPath();ctx.arc(X(csv),Y(r[1]),5.5,0,7);ctx.fill();
+    ctx.strokeStyle=css("--card");ctx.lineWidth=2;ctx.stroke();
+  }
+
+  function updM1(){
+    var D=I18N[LANG];
+    var tau=parseFloat($("#tau").value), pi=parseInt($("#prev").value,10)/100;
+    $("#tauV").textContent=tau.toFixed(2).replace(/\.?0+$/,"");
+    $("#prevV").textContent=(pi*100).toFixed(0)+"%";
+    var r=rowFor(tau), sens=r[1], oms=r[2];
+    var saved=savedAt(sens,oms,pi);
+    var missed=(1-sens)*pi*1000;
+    $("#o_sens").textContent=fmtPct(sens);
+    $("#o_saved").textContent=fmtPct(Math.max(0,saved));
+    $("#o_miss").textContent=missed<0.05?"0":missed.toFixed(missed<10?1:0);
+    var msg;
+    if(sens>=0.999) msg=D.m1_zero(fmtPct(saved));
+    else if(sens>=0.95) msg=D.m1_95(missed.toFixed(1),fmtPct(saved));
+    else msg=D.m1_bad(fmtPct(1-sens));
+    $("#m1means").innerHTML=msg;
+    drawCurve(pi,tau);
+  }
+  $("#tau").addEventListener("input",updM1);
+  $("#prev").addEventListener("input",updM1);
+  var rt; window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(updM1,120);});
+
+  function seg(id,state,key,cb){
+    var el=$("#"+id);
+    el.addEventListener("click",function(e){
+      var b=e.target.closest("button"); if(!b) return;
+      [].forEach.call(el.querySelectorAll("button"),function(x){ x.setAttribute("aria-pressed", x===b ? "true":"false"); });
+      state[key]=b.dataset.v; cb();
+    });
+  }
+
+  /* ---------- MODULE 2 : sensor grade (skin-only crop, + clinical) ---------- */
+  var AUC_LADDER={SG0:0.72, SG1:0.76, SG2:0.81, SG3:0.84, SG4:0.88};
+  var st2={grade:"SG3"};
+  function updM2(){
+    var D=I18N[LANG];
+    var a=AUC_LADDER[st2.grade];
+    $("#o_auc").textContent=a.toFixed(2);
+    $("#m2means").innerHTML=D["m2_"+st2.grade];
+  }
+  seg("grade",st2,"grade",updM2);
+
+  /* ---------- MODULE 3 : in-silico melanin ---------- */
+  var MEL={
+    0:[0.01,0.52,-0.22,0.41], 0.5:[2.38,0.81,0.62,0.52], 1:[3.00,0.97,0.73,0.53],
+    1.5:[3.18,0.98,0.61,0.53], 2:[3.09,0.98,0.42,0.49], 2.5:[3.11,0.97,0.36,0.46]};
+  var st3={corr:"off"};
+  function updM3(){
+    var D=I18N[LANG];
+    var lv=parseFloat($("#mel").value); $("#melV").textContent=lv.toFixed(1);
+    var d=MEL[lv], on=st3.corr==="on";
+    var bias=on?d[2]:d[0], rr=on?d[3]:d[1];
+    $("#o_bias").textContent=(bias>=0?"+":"")+bias.toFixed(2);
+    $("#o_rr").textContent=(rr*100).toFixed(0)+"%";
+    var m;
+    if(lv===0) m=D.m3_zero;
+    else if(!on) m=D.m3_off(bias.toFixed(1),(rr*100).toFixed(0));
+    else m=D.m3_on((bias>=0?"+":"")+bias.toFixed(2),(rr*100).toFixed(0));
+    $("#m3means").innerHTML=m;
+  }
+  seg("corr",st3,"corr",updM3);
+  $("#mel").addEventListener("input",updM3);
+
+  /* ---------- language ---------- */
+  function applyLang(lang){
+    LANG=(lang==="ko")?"ko":"en";
+    try{ localStorage.setItem("bx_lang",LANG); }catch(e){}
+    document.documentElement.lang=LANG;
+    var D=I18N[LANG];
+    [].forEach.call(document.querySelectorAll("[data-k]"),function(el){
+      var k=el.getAttribute("data-k");
+      if(typeof D[k]==="string") el.innerHTML=D[k];
+    });
+    cv.setAttribute("aria-label",D.canvasA);
+    [].forEach.call(document.querySelectorAll(".langbar button"),function(b){
+      b.setAttribute("aria-pressed", b.dataset.lang===LANG ? "true":"false");
+    });
+    updM1(); updM2(); updM3();
+  }
+  $(".langbar").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b) return;
+    applyLang(b.dataset.lang);
+  });
+
+  applyLang(LANG);
+})();
+</script>
+
+</body>
+</html>
